@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.npm-cache/
+.gh-auth-*.log
+*.local
+AGENTS.md
+design-qa.md
+audit/
+qa-*.png
