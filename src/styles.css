@@ -73,6 +73,28 @@ button, label { -webkit-tap-highlight-color: transparent; }
   opacity: .94;
 }
 
+.pwa-install-button {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  right: 16px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgb(81 104 70 / 22%);
+  border-radius: 99px;
+  background: rgb(255 253 248 / 84%);
+  color: #536b49;
+  backdrop-filter: blur(9px);
+  box-shadow: 0 5px 15px rgb(64 56 43 / 9%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pwa-install-button:active { transform: translateY(1px); background: #fffdf8; }
+
 .hero-copy { position: relative; z-index: 1; padding: 24px 22px; }
 .hero-copy h1 {
   margin: 0;
@@ -557,6 +579,7 @@ mark {
   .record-main { gap: 11px; font-size: 22px; }
   .item-row { grid-template-columns: 84px minmax(0, 1fr) 16px; gap: 10px; }
   .item-photo, .item-placeholder { width: 84px; height: 84px; }
+  .pwa-install-button { right: 12px; }
 }
 
 @media (min-width: 600px) {

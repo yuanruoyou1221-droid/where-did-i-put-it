@@ -1,0 +1,9 @@
+{
+  "appId": "com.yuanruoyou.whereisit",
+  "appName": "我放哪了",
+  "webDir": "dist",
+  "backgroundColor": "#fbf8f1",
+  "android": {
+    "backgroundColor": "#fbf8f1"
+  }
+}

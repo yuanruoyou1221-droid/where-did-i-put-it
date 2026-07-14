@@ -26,3 +26,8 @@ npm run build
 
 本项目通过 GitHub Actions 自动部署到 GitHub Pages。
 
+## 安装为 App
+
+- 手机浏览器打开在线页面后，点击首页右上角“安装”。
+- iPhone 可在 Safari 分享菜单中选择“添加到主屏幕”。
+- Android APK 由 `Build Android APK` 工作流自动构建，可在对应 Actions 运行的 Artifacts 中下载。

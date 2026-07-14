@@ -7,6 +7,7 @@ import {
   CaretRightIcon,
   CheckCircleIcon,
   ClockIcon,
+  DownloadSimpleIcon,
   ImageSquareIcon,
   LeafIcon,
   MagnifyingGlassIcon,
@@ -228,9 +229,31 @@ export function App() {
   const [toast, setToast] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [listening, setListening] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installed, setInstalled] = useState(() => (
+    window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true
+  ));
   const fileInputRef = useRef(null);
   const nameInputRef = useRef(null);
   const locationInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    const handleInstalled = () => {
+      setInstalled(true);
+      setInstallPrompt(null);
+      showToast("已经安装到桌面");
+    };
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -276,6 +299,17 @@ export function App() {
   function showToast(message, options = {}) {
     if (pendingDelete && options.kind !== "undo-delete") setPendingDelete(null);
     setToast({ message, duration: options.duration || 2200, kind: options.kind || "status" });
+  }
+
+  async function installApp() {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === "accepted") setInstallPrompt(null);
+      return;
+    }
+    const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    showToast(isIOS ? "点浏览器分享按钮，再选“添加到主屏幕”" : "请打开浏览器菜单，选择“安装应用”", { duration: 3600 });
   }
 
   function startSpeech(mode = "search") {
@@ -400,6 +434,12 @@ export function App() {
       <main className="mobile-prototype">
         <header className="hero">
           <img src={`${import.meta.env.BASE_URL}assets/warm-home-header.png`} alt="" className="hero-image" />
+          {!installed && (
+            <button className="pwa-install-button" type="button" onClick={installApp} aria-label="安装我放哪了应用">
+              <DownloadSimpleIcon size={17} weight="bold" aria-hidden="true" />
+              安装
+            </button>
+          )}
           <div className="hero-copy">
             <h1>我放哪了</h1>
             <p className="hero-kicker"><LeafIcon size={18} weight="duotone" aria-hidden="true" />温暖生活搭子</p>

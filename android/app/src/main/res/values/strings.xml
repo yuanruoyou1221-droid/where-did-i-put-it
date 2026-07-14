@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">我放哪了</string>
+    <string name="title_activity_main">我放哪了</string>
+    <string name="package_name">com.yuanruoyou.whereisit</string>
+    <string name="custom_url_scheme">com.yuanruoyou.whereisit</string>
+</resources>

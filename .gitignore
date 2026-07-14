@@ -7,3 +7,7 @@ AGENTS.md
 design-qa.md
 audit/
 qa-*.png
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
