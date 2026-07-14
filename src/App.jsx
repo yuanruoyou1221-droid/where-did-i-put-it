@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Capacitor } from "@capacitor/core";
+import { SpeechRecognition as NativeSpeechRecognition } from "@capgo/capacitor-speech-recognition";
 import { pinyin } from "pinyin-pro";
 import {
   ArrowCounterClockwiseIcon,
@@ -312,27 +315,69 @@ export function App() {
     showToast(isIOS ? "点浏览器分享按钮，再选“添加到主屏幕”" : "请打开浏览器菜单，选择“安装应用”", { duration: 3600 });
   }
 
+  function applySpeechText(mode, value) {
+    const text = String(value || "").trim().replace(/[。！]/g, "");
+    if (!text) {
+      showToast("没听清，再说一次试试");
+      return;
+    }
+    if (mode === "record") {
+      setDraft((current) => ({ ...current, name: text }));
+      setErrors((current) => ({ ...current, name: "" }));
+    } else {
+      setQuery(text);
+    }
+  }
+
+  async function startNativeSpeech(mode) {
+    setListening(true);
+    try {
+      const availability = await NativeSpeechRecognition.available();
+      if (!availability.available) {
+        showToast("系统没有可用的语音识别服务，请先在系统设置中启用");
+        return;
+      }
+      let permission = await NativeSpeechRecognition.checkPermissions();
+      if (permission.speechRecognition !== "granted") {
+        permission = await NativeSpeechRecognition.requestPermissions();
+      }
+      if (permission.speechRecognition !== "granted") {
+        showToast("需要麦克风权限才能语音输入，请到系统设置中允许");
+        return;
+      }
+      const result = await NativeSpeechRecognition.start({
+        language: "zh-CN",
+        maxResults: 3,
+        prompt: mode === "record" ? "请说出物品名称" : "请说出要找的物品",
+        popup: true,
+        partialResults: false,
+      });
+      applySpeechText(mode, result.matches?.[0]);
+    } catch (error) {
+      const message = String(error?.message || error || "");
+      if (!/cancel|取消/i.test(message)) showToast("语音识别没有完成，请确认麦克风和语音服务权限");
+    } finally {
+      setListening(false);
+    }
+  }
+
   function startSpeech(mode = "search") {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    if (Capacitor.isNativePlatform()) {
+      startNativeSpeech(mode);
+      return;
+    }
+    const BrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!BrowserSpeechRecognition) {
       showToast("当前浏览器暂不支持语音输入");
       return;
     }
-    const recognition = new SpeechRecognition();
+    const recognition = new BrowserSpeechRecognition();
     recognition.lang = "zh-CN";
     recognition.interimResults = false;
     recognition.onstart = () => setListening(true);
     recognition.onend = () => setListening(false);
     recognition.onerror = () => showToast("没听清，再说一次试试");
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript.replace(/[。！]/g, "");
-      if (mode === "record") {
-        setDraft((current) => ({ ...current, name: text }));
-        setErrors((current) => ({ ...current, name: "" }));
-      } else {
-        setQuery(text);
-      }
-    };
+    recognition.onresult = (event) => applySpeechText(mode, event.results[0][0].transcript);
     recognition.start();
   }
 
@@ -399,6 +444,40 @@ export function App() {
       showToast("这张照片暂时无法读取");
     }
     event.target.value = "";
+  }
+
+  async function openPhotoSource() {
+    if (!Capacitor.isNativePlatform()) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      let permission = await Camera.checkPermissions();
+      if (permission.camera !== "granted") {
+        permission = await Camera.requestPermissions({ permissions: ["camera"] });
+      }
+      if (permission.camera !== "granted") {
+        showToast("需要相机权限才能拍照，请到系统设置中允许“我放哪了”使用相机", { duration: 4200 });
+        return;
+      }
+      const photo = await Camera.getPhoto({
+        quality: 82,
+        width: 900,
+        correctOrientation: true,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Prompt,
+        promptLabelHeader: "添加物品照片",
+        promptLabelCancel: "取消",
+        promptLabelPhoto: "从相册选择",
+        promptLabelPicture: "拍照",
+      });
+      if (photo.dataUrl) setDraft((current) => ({ ...current, image: photo.dataUrl }));
+    } catch (error) {
+      const message = String(error?.message || error || "");
+      if (!/cancel|cancell|取消|no image/i.test(message)) {
+        showToast("无法打开相机，请检查系统相机权限后重试", { duration: 3600 });
+      }
+    }
   }
 
   function openDetail(item) {
@@ -512,8 +591,8 @@ export function App() {
               <div><small>{editingId ? "更新位置" : "三秒记一下"}</small><h2>{editingId ? "修改这条记录" : "刚刚把什么放下了？"}</h2></div>
             </div>
             <form className="record-form" onSubmit={saveRecord} noValidate>
-              <button className="photo-picker" type="button" onClick={() => fileInputRef.current?.click()}>
-                {draft.image ? <img src={draft.image} alt="物品照片预览" /> : <><ImageSquareIcon size={31} weight="regular" /><span>拍张照片，更容易找（可选）</span></>}
+              <button className="photo-picker" type="button" onClick={openPhotoSource}>
+                {draft.image ? <img src={draft.image} alt="物品照片预览" /> : <><ImageSquareIcon size={31} weight="regular" /><span>拍照或从相册选择（可选）</span></>}
               </button>
               <input ref={fileInputRef} className="visually-hidden" type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
 

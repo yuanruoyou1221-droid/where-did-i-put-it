@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
+    "@capacitor/camera": "^8.2.1",
     "@capacitor/core": "^8.4.1",
+    "@capgo/capacitor-speech-recognition": "^8.1.10",
     "@phosphor-icons/react": "^2.1.10",
     "@vitejs/plugin-react": "5.0.4",
     "pinyin-pro": "^3.28.1",
